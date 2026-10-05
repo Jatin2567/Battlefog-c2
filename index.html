@@ -1,0 +1,2158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <title>BattleFog-C2 | Tactical Multi-Domain Decision Trainer (SIH #26248)</title>
+  
+  <!-- SEO & Social Meta -->
+  <meta name="description" content="BattleFog-C2: Browser-native wargame simulator training commanders to make life-critical calls during EW jamming, GPS spoofing, and degraded comms. Smart India Hackathon 2026 #26248.">
+  <meta name="theme-color" content="#2563eb">
+
+  <!-- Premium Typography: Syne, Space Grotesk, Inter, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+
+  <!-- Three.js for 3D Interactive Background -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    /* ======================================================== */
+    /* 1. ULTRA-RESPONSIVE DESIGN TOKENS & VIBRANT LIGHT SYSTEM  */
+    /* ======================================================== */
+    :root {
+      /* Vibrant Light Theme Palette */
+      --bg-primary: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: #ffffff;
+      --bg-subtle: #f1f5f9;
+
+      /* Vibrant Accents */
+      --primary: #2563eb;          /* Electric Royal Blue */
+      --primary-hover: #1d4ed8;
+      --primary-light: #60a5fa;
+      --purple: #7c3aed;           /* Radiant Violet */
+      --cyan: #06b6d4;             /* Cyber Cyan */
+      --pink: #ec4899;             /* Vibrant Pink */
+      --amber: #f59e0b;            /* Warning Amber */
+      --amber-dark: #d97706;
+      --emerald: #10b981;          /* Tactical Green */
+      --emerald-dark: #059669;
+      --rose: #f43f5e;             /* Critical Threat Red */
+      --rose-dark: #dc2626;
+
+      /* High-Contrast Readability */
+      --text-main: #0f172a;        /* Deep Slate 900 */
+      --text-body: #334155;        /* Slate 700 */
+      --text-muted: #64748b;       /* Slate 500 */
+      --text-dim: #94a3b8;         /* Slate 400 */
+
+      /* Border Tokens */
+      --border-light: rgba(148, 163, 184, 0.22);
+      --border-glow: rgba(37, 99, 235, 0.35);
+
+      /* Multi-Layer Shadows */
+      --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
+      --shadow-md: 0 8px 24px -4px rgba(15, 23, 42, 0.06), 0 4px 12px -2px rgba(37, 99, 235, 0.04);
+      --shadow-lg: 0 16px 36px -6px rgba(15, 23, 42, 0.08), 0 8px 20px -4px rgba(37, 99, 235, 0.08);
+
+      /* Typography */
+      --font-display: 'Syne', sans-serif;
+      --font-heading: 'Space Grotesk', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    /* Universal Strict Box Sizing & Mobile Overflow Defense */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: hidden;
+      scroll-behavior: smooth;
+      text-size-adjust: 100%;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-body);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      min-height: 100vh;
+      position: relative;
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+
+      /* Tactical Precision Dot Grid + Ambient Multi-Color Radial Gradients */
+      background-image: 
+        radial-gradient(circle at 15% 10%, rgba(37, 99, 235, 0.09) 0%, transparent 45%),
+        radial-gradient(circle at 85% 25%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 50% 65%, rgba(6, 182, 212, 0.07) 0%, transparent 55%),
+        radial-gradient(circle at 20% 90%, rgba(245, 158, 11, 0.07) 0%, transparent 45%),
+        radial-gradient(circle, #cbd5e1 1.1px, transparent 1.1px);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 28px 28px;
+    }
+
+    /* Fixed Three.js WebGL Canvas (Background 3D) */
+    #webgl-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.72;
+    }
+
+    /* Ambient Colorful Glows (No layout overflow) */
+    .glow-blob {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 1;
+      filter: blur(140px);
+      opacity: 0.15;
+    }
+    .blob-1 { top: -100px; left: -80px; width: min(500px, 90vw); height: min(500px, 90vw); background: #3b82f6; }
+    .blob-2 { top: 35%; right: -100px; width: min(450px, 85vw); height: min(450px, 85vw); background: #8b5cf6; }
+    .blob-3 { bottom: 5%; left: 5%; width: min(400px, 80vw); height: min(400px, 80vw); background: #06b6d4; }
+
+    /* Page Container */
+    .page-wrap {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 1260px;
+      margin: 0 auto;
+      padding: 0 clamp(0.85rem, 3.5vw, 2.25rem);
+    }
+
+    /* ======================================================== */
+    /* 2. RESPONSIVE FLOATING TOP NAVIGATION                    */
+    /* ======================================================== */
+    .top-nav {
+      position: sticky;
+      top: 0.75rem;
+      z-index: 200;
+      background: rgba(255, 255, 255, 0.90);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-light);
+      border-radius: 999px;
+      padding: 0.55rem clamp(0.75rem, 2vw, 1.6rem);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.85rem;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+      transition: all 0.3s ease;
+    }
+    .top-nav:hover {
+      border-color: rgba(37, 99, 235, 0.3);
+      box-shadow: 0 12px 32px rgba(37, 99, 235, 0.08);
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      text-decoration: none;
+      color: var(--text-main);
+      font-family: var(--font-heading);
+      font-weight: 800;
+      font-size: clamp(1rem, 2.2vw, 1.22rem);
+      letter-spacing: -0.02em;
+      flex-shrink: 0;
+    }
+    .brand-logo-svg {
+      width: clamp(30px, 4vw, 36px);
+      height: clamp(30px, 4vw, 36px);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(124, 58, 237, 0.15));
+      border: 1px solid rgba(37, 99, 235, 0.25);
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
+    }
+    .brand-accent {
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .brand-tag {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #2563eb;
+      background: rgba(37, 99, 235, 0.08);
+      border: 1px solid rgba(37, 99, 235, 0.2);
+      padding: 0.15rem 0.45rem;
+      border-radius: 6px;
+      margin-left: 0.35rem;
+      letter-spacing: 0.03em;
+    }
+
+    .nav-menu {
+      display: flex;
+      align-items: center;
+      gap: clamp(0.9rem, 2vw, 1.6rem);
+    }
+    .nav-link {
+      color: var(--text-body);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: color 0.2s;
+      position: relative;
+    }
+    .nav-link:hover { color: var(--primary); }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #2563eb, #7c3aed);
+      border-radius: 2px;
+      transition: width 0.25s ease;
+    }
+    .nav-link:hover::after { width: 100%; }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .nav-btn {
+      background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 0.52rem 1.25rem;
+      border-radius: 999px;
+      text-decoration: none;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);
+      transition: all 0.25s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      white-space: nowrap;
+    }
+    .nav-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 22px rgba(37, 99, 235, 0.45);
+      color: #ffffff;
+    }
+
+    /* Mobile Hamburger Trigger */
+    .mobile-menu-btn {
+      display: none;
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      border-radius: 50%;
+      width: 38px;
+      height: 38px;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-main);
+      box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
+    }
+
+    /* Mobile Drawer */
+    .mobile-drawer {
+      display: none;
+      position: fixed;
+      top: 4.8rem;
+      left: 1rem;
+      right: 1rem;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border: 1px solid var(--border-light);
+      border-radius: 20px;
+      padding: 1.25rem;
+      z-index: 199;
+      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.14);
+      flex-direction: column;
+      gap: 0.75rem;
+      transform: translateY(-8px);
+      opacity: 0;
+      transition: all 0.22s ease;
+    }
+    .mobile-drawer.open {
+      display: flex;
+      transform: translateY(0);
+      opacity: 1;
+    }
+    .mobile-drawer a {
+      color: var(--text-main);
+      text-decoration: none;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 0.6rem 0.8rem;
+      border-radius: 12px;
+      transition: background 0.2s;
+    }
+    .mobile-drawer a:hover {
+      background: var(--bg-subtle);
+      color: var(--primary);
+    }
+
+    @media (max-width: 900px) {
+      .nav-menu { display: none; }
+      .mobile-menu-btn { display: flex; }
+    }
+    @media (max-width: 520px) {
+      .brand-tag { display: none; }
+      .nav-btn { display: none; }
+    }
+
+    /* ======================================================== */
+    /* 3. HERO SECTION & KINETIC ROLLER TYPOGRAPHY              */
+    /* ======================================================== */
+    .hero {
+      text-align: center;
+      padding: clamp(2rem, 5vw, 4.5rem) 0 clamp(1.8rem, 4vw, 3.2rem) 0;
+      max-width: 1040px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* A. Badge Kinetic Rollover (Constant A + Rollover X) */
+    .badge-rollover-box {
+      display: inline-flex;
+      align-items: center;
+      background: #ffffff;
+      border: 1px solid rgba(37, 99, 235, 0.25);
+      border-radius: 999px;
+      padding: 0.38rem clamp(0.7rem, 2vw, 1.25rem);
+      margin-bottom: clamp(1.2rem, 2.5vw, 1.8rem);
+      box-shadow: 0 4px 18px rgba(37, 99, 235, 0.08);
+      font-family: var(--font-mono);
+      font-size: clamp(0.68rem, 2vw, 0.82rem);
+      max-width: 100%;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .blinking-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 10px var(--emerald);
+      margin-right: 0.5rem;
+      flex-shrink: 0;
+      animation: pulseBlink 1.4s infinite alternate ease-in-out;
+    }
+    @keyframes pulseBlink {
+      0% { opacity: 0.35; transform: scale(0.85); }
+      100% { opacity: 1; transform: scale(1.2); }
+    }
+    .const-a {
+      font-weight: 800;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-right: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    /* Kinetic Letter Rolling Viewport (Badge) */
+    .letter-roller-viewport {
+      display: inline-flex;
+      align-items: center;
+      overflow: hidden;
+      vertical-align: middle;
+      height: 1.45em;
+      line-height: 1.45em;
+      max-width: 100%;
+    }
+    .letter-box {
+      display: inline-block;
+      overflow: hidden;
+      height: 1.45em;
+      line-height: 1.45em;
+      vertical-align: top;
+    }
+    .letter-char {
+      display: inline-block;
+      transform: translateY(0);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      white-space: pre;
+      color: var(--text-main);
+      font-weight: 600;
+    }
+    .letter-char.roll-out { transform: translateY(-100%); }
+    .letter-char.roll-in-prep { transform: translateY(100%); }
+
+    /* B. Headline Kinetic Rollover (Constant A: TRAINING COMMANDERS IN) */
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.45rem, 5.2vw, 3.8rem);
+      font-weight: 800;
+      line-height: 1.16;
+      letter-spacing: -0.03em;
+      color: var(--text-main);
+      margin-bottom: clamp(1rem, 2vw, 1.5rem);
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    .title-constant {
+      display: block;
+      color: var(--text-main);
+      margin-bottom: 0.15em;
+    }
+    .headline-roller-viewport {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      height: 1.25em;
+      line-height: 1.25em;
+      vertical-align: bottom;
+      max-width: 100%;
+    }
+    .headline-letter-box {
+      display: inline-block;
+      overflow: hidden;
+      height: 1.25em;
+      line-height: 1.25em;
+      vertical-align: top;
+    }
+    .headline-letter-char {
+      display: inline-block;
+      background: linear-gradient(135deg, #2563eb 0%, #7c3aed 35%, #ec4899 70%, #f59e0b 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      transform: translateY(0);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      white-space: pre;
+    }
+    .headline-letter-char.roll-out { transform: translateY(-100%); }
+    .headline-letter-char.roll-in-prep { transform: translateY(100%); }
+
+    .hero-sub {
+      font-size: clamp(0.92rem, 2vw, 1.18rem);
+      color: var(--text-body);
+      line-height: 1.65;
+      max-width: 800px;
+      margin: 0 auto clamp(1.8rem, 3vw, 2.5rem) auto;
+    }
+
+    /* Hero Buttons Row (Mobile Column Wrap) */
+    .hero-btn-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: clamp(2.2rem, 3.5vw, 3.2rem);
+      width: 100%;
+    }
+    .btn-solid {
+      background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: clamp(0.88rem, 1.8vw, 0.98rem);
+      padding: 0.8rem clamp(1.4rem, 2.5vw, 2.2rem);
+      border-radius: 999px;
+      text-decoration: none;
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.32);
+      transition: all 0.25s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      white-space: nowrap;
+    }
+    .btn-solid:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(37, 99, 235, 0.45);
+      color: #ffffff;
+    }
+    .btn-glass {
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      color: var(--text-main);
+      font-weight: 700;
+      font-size: clamp(0.88rem, 1.8vw, 0.98rem);
+      padding: 0.8rem clamp(1.4rem, 2.5vw, 2.2rem);
+      border-radius: 999px;
+      text-decoration: none;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.25s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      white-space: nowrap;
+    }
+    .btn-glass:hover {
+      background: #f8fafc;
+      border-color: rgba(37, 99, 235, 0.4);
+      color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    @media (max-width: 520px) {
+      .hero-btn-row { flex-direction: column; }
+      .btn-solid, .btn-glass {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    /* ======================================================== */
+    /* 4. VIBRANT QUICK TELEMETRY METRIC STRIP (RESPONSIVE)     */
+    /* ======================================================== */
+    .metric-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: clamp(0.75rem, 1.8vw, 1.2rem);
+      margin-bottom: clamp(2.5rem, 4vw, 4rem);
+      width: 100%;
+    }
+    .metric-card {
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      border-radius: 18px;
+      padding: clamp(1rem, 2vw, 1.35rem);
+      text-align: left;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--card-accent, #2563eb);
+    }
+    .metric-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: rgba(37, 99, 235, 0.3);
+    }
+    .metric-value {
+      font-family: var(--font-heading);
+      font-size: clamp(1.4rem, 2.8vw, 1.75rem);
+      font-weight: 800;
+      color: var(--text-main);
+      line-height: 1.2;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-bottom: 0.2rem;
+    }
+    .metric-label {
+      font-size: clamp(0.72rem, 1.4vw, 0.8rem);
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .metric-desc {
+      font-size: clamp(0.78rem, 1.5vw, 0.85rem);
+      color: var(--text-body);
+      margin-top: 0.3rem;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 900px) {
+      .metric-strip { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 440px) {
+      .metric-strip { grid-template-columns: 1fr; }
+    }
+
+    /* ======================================================== */
+    /* 5. WALL-OF-PORTFOLIOS FILTER TABS (NATIVE MOBILE SCROLL) */
+    /* ======================================================== */
+    .filter-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 0.55rem;
+      margin-bottom: clamp(1.8rem, 3vw, 2.5rem);
+      flex-wrap: wrap;
+      width: 100%;
+    }
+    .filter-pill {
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      color: var(--text-muted);
+      padding: 0.5rem clamp(0.85rem, 1.8vw, 1.3rem);
+      border-radius: 999px;
+      font-size: clamp(0.8rem, 1.6vw, 0.88rem);
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .filter-pill:hover {
+      border-color: rgba(37, 99, 235, 0.35);
+      color: var(--primary);
+    }
+    .filter-pill.active {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #ffffff;
+      border-color: #0f172a;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.18);
+    }
+
+    @media (max-width: 640px) {
+      .filter-tabs {
+        justify-content: flex-start;
+        overflow-x: auto;
+        white-space: nowrap;
+        padding-bottom: 0.4rem;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      .filter-tabs::-webkit-scrollbar { display: none; }
+    }
+
+    /* ======================================================== */
+    /* 6. SHOWCASE CARDS GRID (WALL OF PORTFOLIOS STYLE)        */
+    /* ======================================================== */
+    .showcase-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(1.25rem, 2.5vw, 2.2rem);
+      margin-bottom: clamp(3rem, 5vw, 4.5rem);
+      width: 100%;
+    }
+
+    @media (max-width: 960px) {
+      .showcase-grid { grid-template-columns: 1fr; }
+    }
+
+    .portfolio-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-light);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      width: 100%;
+    }
+    .portfolio-card:hover {
+      border-color: rgba(37, 99, 235, 0.35);
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* Window Chrome Header Bar */
+    .window-chrome {
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border-light);
+      padding: 0.65rem 1.15rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .window-dots {
+      display: flex;
+      gap: 0.35rem;
+      flex-shrink: 0;
+    }
+    .window-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+    }
+    .dot-red { background: #ef4444; }
+    .dot-amber { background: #f59e0b; }
+    .dot-green { background: #10b981; }
+    .window-title {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .card-img-wrap {
+      width: 100%;
+      background: #0f172a;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+    }
+    .card-img-wrap img {
+      width: 100%;
+      height: auto;
+      display: block;
+      transition: transform 0.4s ease;
+    }
+    .portfolio-card:hover .card-img-wrap img {
+      transform: scale(1.03);
+    }
+    .zoom-hint {
+      position: absolute;
+      bottom: 0.75rem;
+      right: 0.75rem;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      color: #ffffff;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: all 0.2s ease;
+    }
+    .card-img-wrap:hover .zoom-hint {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .card-body {
+      padding: clamp(1.2rem, 2.5vw, 1.85rem);
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .card-meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .card-rank {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .card-tags {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+    .tag-chip {
+      padding: 0.2rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      letter-spacing: 0.02em;
+      border: 1px solid transparent;
+    }
+    .tag-green {
+      background: rgba(16, 185, 129, 0.09);
+      border-color: rgba(16, 185, 129, 0.28);
+      color: #059669;
+    }
+    .tag-purple {
+      background: rgba(124, 58, 237, 0.09);
+      border-color: rgba(124, 58, 237, 0.28);
+      color: #7c3aed;
+    }
+    .tag-amber {
+      background: rgba(245, 158, 11, 0.09);
+      border-color: rgba(245, 158, 11, 0.28);
+      color: #d97706;
+    }
+    .tag-rose {
+      background: rgba(244, 63, 94, 0.09);
+      border-color: rgba(244, 63, 94, 0.28);
+      color: #e11d48;
+    }
+
+    .card-title {
+      font-family: var(--font-heading);
+      font-size: clamp(1.2rem, 2.2vw, 1.48rem);
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 0.55rem;
+      line-height: 1.3;
+    }
+    .card-desc {
+      color: var(--text-body);
+      font-size: clamp(0.88rem, 1.6vw, 0.94rem);
+      line-height: 1.6;
+      margin-bottom: 1.4rem;
+    }
+    .card-action-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .card-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-light);
+      color: var(--text-main);
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 0.58rem 1.3rem;
+      border-radius: 999px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .card-btn:hover {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #2563eb;
+    }
+    .card-spec-note {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* ======================================================== */
+    /* 7. INTERACTIVE WARGAME RADAR SANDBOX (FLUID SCALING)     */
+    /* ======================================================== */
+    .sandbox-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-light);
+      border-radius: 24px;
+      padding: clamp(1.2rem, 3vw, 2.2rem);
+      margin-bottom: clamp(3rem, 5vw, 4.5rem);
+      box-shadow: var(--shadow-md);
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    .sandbox-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      margin-bottom: 1.15rem;
+    }
+    .sandbox-title-badge {
+      font-weight: 800;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .sandbox-clock {
+      color: var(--emerald-dark);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      background: rgba(16, 185, 129, 0.09);
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    /* Responsive Aspect-Ratio Radar Screen */
+    .radar-display-box {
+      width: 100%;
+      height: clamp(180px, 32vw, 240px);
+      background: linear-gradient(180deg, #0b1120 0%, #0f172a 100%);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      margin: 1rem 0 1.4rem 0;
+      box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.6);
+    }
+    .radar-display-box::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(56, 189, 248, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56, 189, 248, 0.08) 1px, transparent 1px);
+      background-size: 28px 28px;
+      background-position: center center;
+    }
+    .radar-circle {
+      position: absolute;
+      border: 1px solid rgba(56, 189, 248, 0.22);
+      border-radius: 50%;
+    }
+    .rc-1 { width: 25%; aspect-ratio: 1; }
+    .rc-2 { width: 55%; aspect-ratio: 1; }
+    .rc-3 { width: 85%; aspect-ratio: 1; }
+
+    .radar-sweep {
+      position: absolute;
+      width: 44%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #38bdf8);
+      top: 50%;
+      left: 50%;
+      transform-origin: 0 0;
+      animation: sweepRadar 3.6s linear infinite;
+    }
+    @keyframes sweepRadar {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Unit Blips */
+    .unit-blip {
+      position: absolute;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #38bdf8;
+      box-shadow: 0 0 10px #38bdf8;
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 5;
+    }
+    .b-alpha { top: 35%; left: 38%; }
+    .b-bravo { top: 60%; left: 62%; }
+    .b-threat {
+      top: 32%;
+      right: 18%;
+      background: var(--rose);
+      box-shadow: 0 0 12px var(--rose);
+    }
+    .blip-label {
+      position: absolute;
+      top: -16px;
+      left: 12px;
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: #38bdf8;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .b-threat .blip-label {
+      right: 12px;
+      left: auto;
+      color: #f43f5e;
+    }
+
+    .radar-static-noise {
+      position: absolute;
+      inset: 0;
+      background: repeating-radial-gradient(#ffffff 0 0.0001%, #000000 0 0.0002%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      mix-blend-mode: overlay;
+    }
+    .radar-static-noise.active { opacity: 0.28; }
+
+    .sim-ctrl-header {
+      font-size: clamp(0.85rem, 1.8vw, 0.95rem);
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.75rem;
+    }
+    .sim-button-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.4rem;
+      width: 100%;
+    }
+    @media (max-width: 900px) {
+      .sim-button-row { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 480px) {
+      .sim-button-row { grid-template-columns: 1fr; }
+    }
+
+    .sim-btn {
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      color: var(--text-main);
+      padding: 0.75rem 1rem;
+      border-radius: 14px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.22s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      box-shadow: var(--shadow-sm);
+      text-align: left;
+    }
+    .sim-btn:hover {
+      background: #f8fafc;
+      border-color: rgba(37, 99, 235, 0.4);
+      transform: translateY(-2px);
+    }
+    .sim-btn.active {
+      background: #fef2f2;
+      border-color: #ef4444;
+      color: #dc2626;
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.18);
+    }
+
+    /* Debrief Panel */
+    .debrief-panel {
+      background: #f8fafc;
+      border: 1px solid var(--border-light);
+      border-radius: 16px;
+      padding: clamp(1rem, 2vw, 1.5rem);
+      font-family: var(--font-mono);
+      font-size: clamp(0.78rem, 1.6vw, 0.86rem);
+      color: var(--text-body);
+      line-height: 1.6;
+    }
+    .debrief-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-bottom: 0.55rem;
+      padding-bottom: 0.45rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .debrief-title { font-weight: 800; color: var(--primary); }
+    .debrief-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.65rem;
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px dashed var(--border-light);
+    }
+    @media (max-width: 768px) {
+      .debrief-metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .debrief-stat { display: flex; flex-direction: column; }
+    .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+    .stat-val { font-size: 0.98rem; font-weight: 700; color: var(--text-main); }
+
+    /* ======================================================== */
+    /* 8. ADVERSARY EW THREAT LIBRARY                           */
+    /* ======================================================== */
+    .threat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: clamp(1rem, 2vw, 1.6rem);
+      width: 100%;
+    }
+    @media (max-width: 900px) {
+      .threat-grid { grid-template-columns: 1fr; }
+    }
+
+    .threat-card-box {
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      border-radius: 18px;
+      padding: clamp(1.15rem, 2.2vw, 1.6rem);
+      transition: all 0.3s ease;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      width: 100%;
+    }
+    .threat-card-box:hover {
+      border-color: rgba(37, 99, 235, 0.35);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .threat-badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #d97706;
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      padding: 0.18rem 0.55rem;
+      border-radius: 6px;
+      margin-bottom: 0.55rem;
+      width: fit-content;
+    }
+    .threat-title {
+      font-family: var(--font-heading);
+      font-size: clamp(1.15rem, 2vw, 1.3rem);
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 0.35rem;
+    }
+    .threat-desc {
+      color: var(--text-body);
+      font-size: 0.9rem;
+      line-height: 1.55;
+    }
+    .threat-specs-row {
+      display: flex;
+      gap: 0.85rem;
+      margin-top: 1rem;
+      padding-top: 0.7rem;
+      border-top: 1px solid var(--bg-subtle);
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+
+    /* Architecture Grid */
+    .arch-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.15rem;
+      width: 100%;
+    }
+    @media (max-width: 900px) {
+      .arch-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 480px) {
+      .arch-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ======================================================== */
+    /* 9. LIGHTBOX MODAL (SAFE TOUCH & ESC)                     */
+    /* ======================================================== */
+    .lightbox-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      opacity: 0;
+      transition: opacity 0.22s ease;
+    }
+    .lightbox-modal.active {
+      display: flex;
+      opacity: 1;
+    }
+    .lightbox-content {
+      max-width: 1100px;
+      width: 100%;
+      background: #ffffff;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+      position: relative;
+    }
+    .lightbox-header {
+      padding: 0.85rem 1.25rem;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .lightbox-title {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text-main);
+    }
+    .lightbox-close-btn {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-light);
+      border-radius: 50%;
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1rem;
+      color: var(--text-main);
+    }
+    .lightbox-img-wrap {
+      max-height: 80vh;
+      overflow-y: auto;
+      background: #0f172a;
+    }
+    .lightbox-img-wrap img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* ======================================================== */
+    /* 10. RESPONSIVE FOOTER                                    */
+    /* ======================================================== */
+    footer {
+      border-top: 1px solid var(--border-light);
+      padding: clamp(2.5rem, 5vw, 4rem) 0 clamp(1.8rem, 3.5vw, 2.5rem) 0;
+      margin-top: clamp(3.5rem, 6vw, 5.5rem);
+      text-align: center;
+      position: relative;
+      width: 100%;
+    }
+    .footer-brand {
+      font-family: var(--font-heading);
+      font-weight: 800;
+      font-size: 1.28rem;
+      color: var(--text-main);
+      margin-bottom: 0.45rem;
+    }
+    .footer-meta {
+      color: var(--text-body);
+      font-size: clamp(0.85rem, 1.8vw, 0.94rem);
+      max-width: 680px;
+      margin: 0 auto 1.2rem auto;
+      line-height: 1.6;
+    }
+    .footer-link-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      padding: 0.4rem 1.15rem;
+      border-radius: 999px;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: var(--primary);
+      text-decoration: none;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
+      word-break: break-all;
+    }
+    .footer-link-pill:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Three.js 3D Background Canvas -->
+  <canvas id="webgl-canvas"></canvas>
+
+  <!-- Ambient Light Blobs -->
+  <div class="glow-blob blob-1"></div>
+  <div class="glow-blob blob-2"></div>
+  <div class="glow-blob blob-3"></div>
+
+  <div class="page-wrap">
+
+    <!-- ======================================================== -->
+    <!-- TOP NAVIGATION (FLUID & MOBILE-ADAPTIVE)                 -->
+    <!-- ======================================================== -->
+    <header class="top-nav">
+      <a href="#" class="nav-brand" aria-label="BattleFog-C2 Home">
+        <div class="brand-logo-svg">
+          <svg width="22" height="22" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 3L6 9V19C6 28 12 34.5 20 37C28 34.5 34 28 34 19V9L20 3Z" stroke="#2563eb" stroke-width="2.5" fill="rgba(37, 99, 235, 0.15)"/>
+            <circle cx="20" cy="19" r="6" stroke="#d97706" stroke-width="2"/>
+            <line x1="20" y1="9" x2="20" y2="29" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="2 2"/>
+            <line x1="10" y1="19" x2="30" y2="19" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="2 2"/>
+            <circle cx="20" cy="19" r="2.5" fill="#2563eb"/>
+          </svg>
+        </div>
+        <div>
+          <span>BattleFog</span><span class="brand-accent">-C2</span>
+          <span class="brand-tag">SIH #26248</span>
+        </div>
+      </a>
+
+      <!-- Desktop Nav Menu -->
+      <nav class="nav-menu">
+        <a href="#showcase" class="nav-link">C2 Consoles</a>
+        <a href="#simulator" class="nav-link">Live Radar</a>
+        <a href="#threats" class="nav-link">EW Threats</a>
+        <a href="#architecture" class="nav-link">Architecture</a>
+        <a href="#team" class="nav-link">Dossier</a>
+      </nav>
+
+      <!-- Nav Actions & Mobile Toggle -->
+      <div class="nav-actions">
+        <a href="#simulator" class="nav-btn">
+          <span>⚡ Launch Demo</span>
+        </a>
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open Navigation">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Mobile Drawer -->
+    <div class="mobile-drawer" id="mobileDrawer">
+      <a href="#showcase" onclick="toggleMobileMenu()">🖥️ C2 Consoles Showcase</a>
+      <a href="#simulator" onclick="toggleMobileMenu()">🎯 Interactive Radar Sandbox</a>
+      <a href="#threats" onclick="toggleMobileMenu()">📡 Adversary EW Library</a>
+      <a href="#architecture" onclick="toggleMobileMenu()">🏗️ Architecture &amp; Stack</a>
+      <a href="#team" onclick="toggleMobileMenu()">📋 Team Credentials</a>
+      <a href="https://battlefog-c2.vercel.app" target="_blank" style="color:#2563eb; font-weight:700;">🌐 Open Hosted App (Vercel)</a>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- HERO SECTION WITH COMPACT RESPONSIVE KINETIC ROLLER      -->
+    <!-- ======================================================== -->
+    <section class="hero">
+
+      <!-- 1. KINETIC BADGE (Constant A: LIVE INTEL: + Rollover X) -->
+      <div class="badge-rollover-box" title="Live Tactical Intel Feed">
+        <span class="blinking-dot"></span>
+        <span class="const-a">LIVE INTEL:</span>
+        <div class="letter-roller-viewport" id="badgeViewport">
+          <!-- Populated by JavaScript Kinetic Letter Engine -->
+        </div>
+      </div>
+
+      <!-- 2. KINETIC HERO TITLE (Constant A + Rollover X) -->
+      <h1 class="hero-title">
+        <span class="title-constant">TRAINING COMMANDERS IN</span>
+        <div class="headline-roller-viewport" id="headlineViewport">
+          <!-- Populated by JavaScript Kinetic Letter Engine -->
+        </div>
+      </h1>
+
+      <p class="hero-sub">
+        A browser-native tactical wargaming simulator designed for <strong>Smart India Hackathon #26248</strong>. 
+        It trains platoon and company commanders to execute mission doctrine when radios go silent, GPS drift exceeds 350 meters, and drone video feeds freeze.
+      </p>
+
+      <!-- Action Buttons Row -->
+      <div class="hero-btn-row">
+        <a href="#simulator" class="btn-solid">
+          <span>⚡ Launch Interactive Radar Sandbox</span>
+        </a>
+        <a href="#showcase" class="btn-glass">
+          <span>Inspect C2 Consoles</span>
+          <span>↗</span>
+        </a>
+      </div>
+
+      <!-- 3. QUICK TELEMETRY METRIC STRIP (RESPONSIVE GRID) -->
+      <div class="metric-strip">
+        <div class="metric-card" style="--card-accent: #2563eb;">
+          <div class="metric-value">
+            <span>&lt; 12</span><span style="font-size:1rem; color:#2563eb;">ms</span>
+          </div>
+          <div class="metric-label">Delta Bandwidth Sync</div>
+          <div class="metric-desc">Sub-second state mutation over degraded tactical networks.</div>
+        </div>
+
+        <div class="metric-card" style="--card-accent: #7c3aed;">
+          <div class="metric-value">
+            <span>30</span><span style="font-size:1rem; color:#7c3aed;">m</span>
+          </div>
+          <div class="metric-label">SRTM DEM Physics</div>
+          <div class="metric-desc">Knife-edge diffraction calculates real terrain shadow radio cutoffs.</div>
+        </div>
+
+        <div class="metric-card" style="--card-accent: #059669;">
+          <div class="metric-value">
+            <span>100</span><span style="font-size:1rem; color:#059669;">%</span>
+          </div>
+          <div class="metric-label">Browser Native PWA</div>
+          <div class="metric-desc">Zero specialized hardware; runs offline on field laptops.</div>
+        </div>
+
+        <div class="metric-card" style="--card-accent: #d97706;">
+          <div class="metric-value">
+            <span>3</span><span style="font-size:1rem; color:#d97706;">Threats</span>
+          </div>
+          <div class="metric-label">Adversary Profiles</div>
+          <div class="metric-desc">Verified specs of Zhitel, Krasukha-4, and Leer-3 EW systems.</div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- WALL OF PORTFOLIOS FILTER TABS                           -->
+    <!-- ======================================================== -->
+    <div class="filter-tabs" id="showcase">
+      <button class="filter-pill active" onclick="filterGallery('all', this)">✨ All C2 Systems</button>
+      <button class="filter-pill" onclick="filterGallery('instructor', this)">🛡️ Instructor God-Mode</button>
+      <button class="filter-pill" onclick="filterGallery('trainee', this)">🎯 Trainee Tactical Cockpit</button>
+      <button class="filter-pill" onclick="filterGallery('simulator', this)">⚡ Live Radar Sandbox</button>
+      <button class="filter-pill" onclick="filterGallery('threats', this)">📡 EW Threat Library</button>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- SHOWCASE CARDS (WALL OF PORTFOLIOS STYLE)                -->
+    <!-- ======================================================== -->
+    <div class="showcase-grid">
+
+      <!-- Showcase Card 1: Instructor God-Mode -->
+      <div class="portfolio-card gallery-item" data-category="instructor">
+        <div class="window-chrome">
+          <div class="window-dots">
+            <span class="window-dot dot-red"></span>
+            <span class="window-dot dot-amber"></span>
+            <span class="window-dot dot-green"></span>
+          </div>
+          <span class="window-title">C2-INSTRUCTOR:8080/GODMODE.SYS</span>
+          <span style="font-family:var(--font-mono); font-size:0.72rem; color:#059669; font-weight:700;">LIVE FEED</span>
+        </div>
+
+        <div class="card-img-wrap" onclick="openLightbox('./images/instructor_god_mode.jpg', 'Instructor God-Mode Console Overview')">
+          <img src="./images/instructor_god_mode.jpg" alt="Instructor God-Mode Control Room Console" loading="lazy">
+          <div class="zoom-hint">
+            <span>🔍 Expand High-Res</span>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div>
+            <div class="card-meta-row">
+              <span class="card-rank">SYSTEM // 01</span>
+              <div class="card-tags">
+                <span class="tag-chip tag-green">GROUND TRUTH</span>
+                <span class="tag-chip tag-purple">EW INJECTOR</span>
+                <span class="tag-chip tag-amber">AUDIT ENGINE</span>
+              </div>
+            </div>
+
+            <h2 class="card-title">Instructor "God-Mode" Multi-Domain Control Room</h2>
+            <p class="card-desc">
+              Uncorrupted operational view showing true coordinates of all squads, friendly drones, and hostile combatants.
+              Instructors can paint a 20 km Krasukha jamming radius on the 3D terrain, inject fake SITREPs, cut radio channels with real-time sliders, and measure cadet decision latency ($\tau_{decision}$).
+            </p>
+          </div>
+
+          <div class="card-action-row">
+            <button class="card-btn" onclick="openLightbox('./images/instructor_god_mode.jpg', 'Instructor God-Mode Control Room')">
+              <span>Inspect Interface</span>
+              <span>↗</span>
+            </button>
+            <span class="card-spec-note">Dual-State Mutation • WebSocket Stream</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Showcase Card 2: Trainee Tactical Cockpit -->
+      <div class="portfolio-card gallery-item" data-category="trainee">
+        <div class="window-chrome">
+          <div class="window-dots">
+            <span class="window-dot dot-red"></span>
+            <span class="window-dot dot-amber"></span>
+            <span class="window-dot dot-green"></span>
+          </div>
+          <span class="window-title">CADET-COCKPIT:3000/TACTICAL_HUD.EXE</span>
+          <span style="font-family:var(--font-mono); font-size:0.72rem; color:#d97706; font-weight:700;">DEGRADED COMMS</span>
+        </div>
+
+        <div class="card-img-wrap" onclick="openLightbox('./images/trainee_tactical_hud.jpg', 'Trainee Tactical Cockpit HUD View')">
+          <img src="./images/trainee_tactical_hud.jpg" alt="Trainee Tactical HUD Cockpit" loading="lazy">
+          <div class="zoom-hint">
+            <span>🔍 Expand High-Res</span>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div>
+            <div class="card-meta-row">
+              <span class="card-rank">SYSTEM // 02</span>
+              <div class="card-tags">
+                <span class="tag-chip tag-amber">PERCEIVED STATE</span>
+                <span class="tag-chip tag-rose">FOG OF WAR</span>
+                <span class="tag-chip tag-green">AI ADVISOR</span>
+              </div>
+            </div>
+
+            <h2 class="card-title">Sub-Unit Commander Tactical Cockpit &amp; Fog of War HUD</h2>
+            <p class="card-desc">
+              The high-stress view presented to the trainee. Tactical map icons turn amber with question marks as coordinate data ages beyond 14 minutes.
+              Drone reconnaissance displays static with "NO CARRIER", while radio communications stutter, forcing cadets to apply contingency SOPs and terrain dead-reckoning.
+            </p>
+          </div>
+
+          <div class="card-action-row">
+            <button class="card-btn" onclick="openLightbox('./images/trainee_tactical_hud.jpg', 'Sub-Unit Commander Tactical Cockpit')">
+              <span>Inspect Trainee HUD</span>
+              <span>↗</span>
+            </button>
+            <span class="card-spec-note">Degraded State • Contingency Tree</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- INTERACTIVE WARGAME RADAR SANDBOX (LIVE SIMULATION)      -->
+    <!-- ======================================================== -->
+    <div class="sandbox-card gallery-item" id="simulator" data-category="simulator">
+      <div class="sandbox-header-row">
+        <div class="sandbox-title-badge">
+          <span style="color:#2563eb;">🎯</span>
+          <span>TACTICAL ELECTRONIC WARFARE SIMULATOR</span>
+        </div>
+        <div class="sandbox-clock">
+          <span class="blinking-dot" style="margin-right:0.35rem;"></span>
+          <span id="simClock">CLOCK: 04:12:35</span>
+        </div>
+      </div>
+
+      <!-- Radar Screen Viewport -->
+      <div class="radar-display-box" id="radarViewport">
+        <div class="radar-circle rc-1"></div>
+        <div class="radar-circle rc-2"></div>
+        <div class="radar-circle rc-3"></div>
+        <div class="radar-sweep"></div>
+        <div class="radar-static-noise" id="radarNoise"></div>
+
+        <!-- Squad Alpha Unit -->
+        <div class="unit-blip b-alpha" id="blipAlpha">
+          <span class="blip-label">ALPHA [FRIENDLY]</span>
+        </div>
+
+        <!-- Squad Bravo Unit (Subject to Jamming Drift) -->
+        <div class="unit-blip b-bravo" id="blipBravo">
+          <span class="blip-label" id="bravoLabel">BRAVO [OK]</span>
+        </div>
+
+        <!-- Hostile EW Threat Unit -->
+        <div class="unit-blip b-threat" id="blipThreat">
+          <span class="blip-label">R-330Zh [JAMMER]</span>
+        </div>
+      </div>
+
+      <div class="sim-ctrl-header">
+        <span>⚡ Click Injectors to Degrade Trainee Situational Awareness:</span>
+      </div>
+
+      <div class="sim-button-row">
+        <button class="sim-btn" id="btnRadio" onclick="toggleSim('radio')">
+          <span style="font-size:1.15rem;">📻</span>
+          <div>
+            <div>Cut VHF Squad Radio</div>
+            <span style="font-size:0.72rem; color:var(--text-muted); font-weight:500;">92% Packet Loss</span>
+          </div>
+        </button>
+
+        <button class="sim-btn" id="btnGPS" onclick="toggleSim('gps')">
+          <span style="font-size:1.15rem;">📍</span>
+          <div>
+            <div>Spoof GPS Coordinates</div>
+            <span style="font-size:0.72rem; color:var(--text-muted); font-weight:500;">±350m Positional Drift</span>
+          </div>
+        </button>
+
+        <button class="sim-btn" id="btnUAV" onclick="toggleSim('uav')">
+          <span style="font-size:1.15rem;">🚁</span>
+          <div>
+            <div>Kill Drone Video Stream</div>
+            <span style="font-size:0.72rem; color:var(--text-muted); font-weight:500;">Direct Video Blackout</span>
+          </div>
+        </button>
+
+        <button class="sim-btn" id="btnRedFog" onclick="toggleSim('redfog')">
+          <span style="font-size:1.15rem;">🛡️</span>
+          <div>
+            <div>Full "Red Fog" Saturation</div>
+            <span style="font-size:0.72rem; color:var(--text-muted); font-weight:500;">Maximum Multi-Domain EW</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Live Debrief Panel -->
+      <div class="debrief-panel">
+        <div class="debrief-row">
+          <span class="debrief-title">LIVE AFTER-ACTION REVIEW (AAR) AUDIT</span>
+          <span id="scoreBadge" style="color:var(--emerald-dark); font-weight:800; font-size:0.9rem;">
+            READINESS: 94% • OPTIMAL STATUS
+          </span>
+        </div>
+        <p id="debriefText" style="margin-bottom:0.45rem;">
+          Comms channels are clear. Squad Bravo and Alpha are synchronized over VHF Tactical Mesh. Real-time telemetry error &lt; 2 meters. Situational awareness intact.
+        </p>
+
+        <div class="debrief-metrics-grid">
+          <div class="debrief-stat">
+            <span class="stat-label">Decision Latency (&tau;<sub>decision</sub>)</span>
+            <span class="stat-val" id="statLatency">1.2 sec</span>
+          </div>
+          <div class="debrief-stat">
+            <span class="stat-label">Command Loss Index (CLI)</span>
+            <span class="stat-val" id="statCLI">0.04 (Nominal)</span>
+          </div>
+          <div class="debrief-stat">
+            <span class="stat-label">Position Delta</span>
+            <span class="stat-val" id="statDelta">&plusmn; 1.5 m</span>
+          </div>
+          <div class="debrief-stat">
+            <span class="stat-label">Doctrinal Action</span>
+            <span class="stat-val" id="statDoct" style="color:var(--emerald-dark);">Normal Ops</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- ADVERSARY EW THREAT LIBRARY SECTION                      -->
+    <!-- ======================================================== -->
+    <section class="sandbox-card gallery-item" id="threats" data-category="threats" style="margin-bottom: clamp(3rem, 5vw, 4.5rem);">
+      <div style="margin-bottom: 1.5rem;">
+        <span class="threat-badge">OPERATIONAL THREAT INTEL</span>
+        <h2 style="font-family:var(--font-heading); font-size:clamp(1.3rem, 2.6vw, 1.75rem); font-weight:800; color:var(--text-main); margin-bottom:0.35rem;">
+          Modeled Adversary Electronic Warfare Systems
+        </h2>
+        <p style="color:var(--text-body); font-size:0.92rem; max-width:820px;">
+          Rather than abstract RNG noise, BattleFog-C2 models documented threat profiles observed in high-intensity peer and near-peer combat:
+        </p>
+      </div>
+
+      <div class="threat-grid">
+        <!-- Threat 1: Zhitel -->
+        <div class="threat-card-box">
+          <div>
+            <span class="threat-badge" style="color:#d97706; background:rgba(245, 158, 11, 0.1);">VHF / UHF / GNSS DISRUPTOR</span>
+            <h3 class="threat-title">R-330Zh Zhitel</h3>
+            <p class="threat-desc">
+              Ground-based mobile station radiating high-power noise across 100 MHz – 2 GHz. Imposes complete GPS coordinate denial within 20–30 km, causing &plusmn;350m telemetry drift and packet drop across squad radios.
+            </p>
+          </div>
+          <div class="threat-specs-row">
+            <span>Range: 20–30 km</span>
+            <span>Freq: 100–2000 MHz</span>
+          </div>
+        </div>
+
+        <!-- Threat 2: Krasukha-4 -->
+        <div class="threat-card-box">
+          <div>
+            <span class="threat-badge" style="color:#7c3aed; background:rgba(124, 58, 237, 0.1);">BROADBAND RADAR / SATCOM</span>
+            <h3 class="threat-title">Krasukha-4</h3>
+            <p class="threat-desc">
+              Strategic electronic countermeasure system targeting airborne surveillance, AWACS, and reconnaissance UAV command links up to 150–300 km. Paralyzes overhead video reconnaissance and datalinks.
+            </p>
+          </div>
+          <div class="threat-specs-row">
+            <span>Range: 150–300 km</span>
+            <span>Target: X/Ku-Band Radars</span>
+          </div>
+        </div>
+
+        <!-- Threat 3: Leer-3 -->
+        <div class="threat-card-box">
+          <div>
+            <span class="threat-badge" style="color:#f43f5e; background:rgba(244, 63, 94, 0.1);">DRONE-BORNE GSM HIJACKER</span>
+            <h3 class="threat-title">Leer-3 (RB-341V)</h3>
+            <p class="threat-desc">
+              Orlan-10 drone payload that suppresses local cellular and tactical relay frequencies. Emulates cellular base stations to inject fraudulent SITREPs and deceptive coordinate waypoints into cadet HUDs.
+            </p>
+          </div>
+          <div class="threat-specs-row">
+            <span>Loiter: 10 Hours</span>
+            <span>Tactic: Spoofed SITREPs</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- DOCTRINAL ARCHITECTURE & TECH SPECS                      -->
+    <!-- ======================================================== -->
+    <section class="sandbox-card" id="architecture" style="margin-bottom: clamp(3rem, 5vw, 4.5rem);">
+      <div style="margin-bottom: 1.5rem;">
+        <span class="threat-badge" style="color:#2563eb; background:rgba(37, 99, 235, 0.1);">DEFENSE-GRADE STANDARDS</span>
+        <h2 style="font-family:var(--font-heading); font-size:clamp(1.3rem, 2.6vw, 1.75rem); font-weight:800; color:var(--text-main); margin-bottom:0.35rem;">
+          Production Architecture &amp; Scalability
+        </h2>
+        <p style="color:var(--text-body); font-size:0.92rem; max-width:820px;">
+          Designed for instant institutional adoption across military academies and NDA training wings with zero hardware procurement barriers:
+        </p>
+      </div>
+
+      <div class="arch-grid">
+        <div class="threat-card-box">
+          <div style="font-size:1.6rem; margin-bottom:0.3rem;">⚡</div>
+          <h4 style="font-family:var(--font-heading); font-size:1.05rem; color:var(--text-main); margin-bottom:0.25rem;">Frontend &amp; PWA Engine</h4>
+          <p style="color:var(--text-body); font-size:0.86rem; line-height:1.55;">
+            React 18, TypeScript, Three.js 3D terrain canvas, and Offline PWA Service Worker caching for air-gapped field laptops.
+          </p>
+        </div>
+
+        <div class="threat-card-box">
+          <div style="font-size:1.6rem; margin-bottom:0.3rem;">🚀</div>
+          <h4 style="font-family:var(--font-heading); font-size:1.05rem; color:var(--text-main); margin-bottom:0.25rem;">Backend &amp; Mutation</h4>
+          <p style="color:var(--text-body); font-size:0.86rem; line-height:1.55;">
+            FastAPI 0.111 on Python 3.11 with non-blocking WebSockets delivering delta updates (&lt; 5 KB/s) for ultra-low latency.
+          </p>
+        </div>
+
+        <div class="threat-card-box">
+          <div style="font-size:1.6rem; margin-bottom:0.3rem;">🏔️</div>
+          <h4 style="font-family:var(--font-heading); font-size:1.05rem; color:var(--text-main); margin-bottom:0.25rem;">Terrain Physics</h4>
+          <p style="color:var(--text-body); font-size:0.86rem; line-height:1.55;">
+            SRTM 30m Digital Elevation Models calculating line-of-sight knife-edge diffraction to realistically shadow radio propagation.
+          </p>
+        </div>
+
+        <div class="threat-card-box">
+          <div style="font-size:1.6rem; margin-bottom:0.3rem;">🤖</div>
+          <h4 style="font-family:var(--font-heading); font-size:1.05rem; color:var(--text-main); margin-bottom:0.25rem;">Bi-Temporal AAR Engine</h4>
+          <p style="color:var(--text-body); font-size:0.86rem; line-height:1.55;">
+            PostgreSQL 15 event store paired with Google Gemini AI for instant tactical scoring, timeline scrubbing, and debrief transcripts.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- SIH 2026 TEAM & CREDENTIALS BANNER                       -->
+    <!-- ======================================================== -->
+    <div class="sandbox-card" id="team" style="text-align:center; background:linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(124, 58, 237, 0.06)); border-color:rgba(37, 99, 235, 0.25);">
+      <span class="threat-badge" style="color:#2563eb; background:rgba(37, 99, 235, 0.1); margin:0 auto 0.65rem auto;">OFFICIAL SUBMISSION</span>
+      <h3 style="font-family:var(--font-heading); font-size:clamp(1.2rem, 2.4vw, 1.65rem); color:var(--text-main); margin-bottom:0.35rem;">
+        Smart India Hackathon 2026 • Problem Statement #26248
+      </h3>
+      <p style="color:var(--text-body); font-size:0.92rem; max-width:680px; margin:0 auto 1.35rem auto;">
+        Theme: <strong>Smart Automation</strong> • Category: <strong>Software</strong> • Team: <strong>JeevanRakshak (CSE-SIH-014)</strong>
+      </p>
+      <a href="https://battlefog-c2.vercel.app" target="_blank" class="btn-solid" style="margin:0 auto;">
+        <span>🌐 Production App: battlefog-c2.vercel.app</span>
+      </a>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- FOOTER                                                   -->
+    <!-- ======================================================== -->
+    <footer>
+      <div class="footer-brand">
+        <span>BattleFog</span><span style="color:#2563eb;">-C2</span>
+      </div>
+      <p class="footer-meta">
+        Tactical Multi-Domain Decision-Making Trainer for Degraded Communication Environments.<br>
+        Developed for Smart India Hackathon 2026 by Team JeevanRakshak (CSE-SIH-014).
+      </p>
+      <a href="https://battlefog-c2.vercel.app" class="footer-link-pill" target="_blank">
+        <span>🔗 https://battlefog-c2.vercel.app</span>
+      </a>
+    </footer>
+
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- HIGH RESOLUTION LIGHTBOX MODAL                           -->
+  <!-- ======================================================== -->
+  <div class="lightbox-modal" id="lightboxModal" onclick="closeLightbox(event)">
+    <div class="lightbox-content" onclick="event.stopPropagation()">
+      <div class="lightbox-header">
+        <h3 class="lightbox-title" id="lightboxTitle">Interface Inspection</h3>
+        <button class="lightbox-close-btn" onclick="closeLightbox()" aria-label="Close modal">✕</button>
+      </div>
+      <div class="lightbox-img-wrap">
+        <img id="lightboxImg" src="" alt="High Resolution Tactical HUD">
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT: THREE.JS, KINETIC ROLLER & SIMULATOR LOGIC   -->
+  <!-- ======================================================== -->
+  <script>
+    // ========================================================
+    // 1. THREE.JS 3D SCENE (LIGHT THEME & RESIZE STABILITY)
+    // ========================================================
+    const canvas = document.getElementById('webgl-canvas');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.z = 8;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    // Outer Tactical Wireframe (Electric Blue)
+    const geometry = new THREE.IcosahedronGeometry(2.8, 2);
+    const wireframeMat = new THREE.MeshBasicMaterial({
+      color: 0x2563eb,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.22
+    });
+    const sphereMesh = new THREE.Mesh(geometry, wireframeMat);
+    scene.add(sphereMesh);
+
+    // Inner Nested Tactical Core (Cyber Cyan)
+    const innerGeo = new THREE.OctahedronGeometry(1.6, 1);
+    const innerMat = new THREE.MeshBasicMaterial({
+      color: 0x06b6d4,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.28
+    });
+    const innerMesh = new THREE.Mesh(innerGeo, innerMat);
+    scene.add(innerMesh);
+
+    // Floating Starlight Particles (Radiant Violet)
+    const partGeo = new THREE.BufferGeometry();
+    const partCount = 380;
+    const partPos = new Float32Array(partCount * 3);
+    for (let i = 0; i < partCount * 3; i += 3) {
+      partPos[i] = (Math.random() - 0.5) * 14;
+      partPos[i + 1] = (Math.random() - 0.5) * 14;
+      partPos[i + 2] = (Math.random() - 0.5) * 14;
+    }
+    partGeo.setAttribute('position', new THREE.BufferAttribute(partPos, 3));
+    const partMat = new THREE.PointsMaterial({
+      color: 0x7c3aed,
+      size: 0.05,
+      transparent: true,
+      opacity: 0.45
+    });
+    const particles = new THREE.Points(partGeo, partMat);
+    scene.add(particles);
+
+    let scrollY = 0, targetScrollY = 0;
+    let maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+
+    window.addEventListener('scroll', () => {
+      targetScrollY = window.scrollY;
+      maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    }, { passive: true });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    });
+
+    // Parallax mouse effect
+    let mouseX = 0, mouseY = 0;
+    window.addEventListener('mousemove', (e) => {
+      mouseX = (e.clientX / window.innerWidth - 0.5) * 0.7;
+      mouseY = (e.clientY / window.innerHeight - 0.5) * 0.7;
+    });
+
+    function animateThree() {
+      requestAnimationFrame(animateThree);
+      scrollY += (targetScrollY - scrollY) * 0.08;
+      const scrollFraction = maxScroll > 0 ? scrollY / maxScroll : 0;
+
+      sphereMesh.rotation.y += 0.003;
+      sphereMesh.rotation.x = scrollFraction * Math.PI * 2 + mouseY * 0.2;
+      sphereMesh.rotation.z = scrollFraction * 1.5 + mouseX * 0.2;
+      sphereMesh.position.x = Math.sin(scrollFraction * Math.PI) * 2.6 + mouseX * 0.4;
+      sphereMesh.position.y = -scrollFraction * 2.0 - mouseY * 0.4;
+
+      innerMesh.rotation.y -= 0.005;
+      innerMesh.rotation.x -= 0.002;
+      innerMesh.position.x = sphereMesh.position.x;
+      innerMesh.position.y = sphereMesh.position.y;
+
+      particles.rotation.y -= 0.001;
+
+      renderer.render(scene, camera);
+    }
+    animateThree();
+
+    // ========================================================
+    // 2. KINETIC LETTER-BY-LETTER ROLLING ENGINE (RESPONSIVE)
+    // ========================================================
+    function createLetterRoller(viewportEl, messages, letterBoxClass, letterCharClass, intervalTime, staggerDelay = 22) {
+      if (!viewportEl) return;
+      let currentIdx = 0;
+
+      function renderWord(word, state = 'visible') {
+        viewportEl.innerHTML = '';
+        const chars = word.split('');
+        chars.forEach((ch) => {
+          const box = document.createElement('span');
+          box.className = letterBoxClass;
+          const charSpan = document.createElement('span');
+          charSpan.className = letterCharClass;
+          charSpan.textContent = ch === ' ' ? '\u00A0' : ch;
+          
+          if (state === 'in-prep') {
+            charSpan.classList.add('roll-in-prep');
+          }
+          box.appendChild(charSpan);
+          viewportEl.appendChild(box);
+        });
+      }
+
+      renderWord(messages[currentIdx]);
+
+      function cycleNext() {
+        const currentChars = viewportEl.querySelectorAll(`.${letterCharClass}`);
+        
+        currentChars.forEach((c, i) => {
+          setTimeout(() => {
+            c.classList.add('roll-out');
+          }, i * staggerDelay);
+        });
+
+        const rolloutDuration = currentChars.length * staggerDelay + 250;
+
+        setTimeout(() => {
+          currentIdx = (currentIdx + 1) % messages.length;
+          renderWord(messages[currentIdx], 'in-prep');
+
+          const newChars = viewportEl.querySelectorAll(`.${letterCharClass}`);
+          
+          setTimeout(() => {
+            newChars.forEach((c, i) => {
+              setTimeout(() => {
+                c.classList.remove('roll-in-prep');
+              }, i * staggerDelay);
+            });
+          }, 35);
+
+        }, rolloutDuration);
+      }
+
+      setInterval(cycleNext, intervalTime);
+    }
+
+    // A. Badge Messages (Optimized to fit on compact 320px mobile screens)
+    const badgeMessages = [
+      "Team JeevanRakshak",
+      "SIH 2026 Problem #26248",
+      "R-330Zh & Krasukha-4",
+      "Dual-State C2 Engine",
+      "Zero-Hardware Web PWA",
+      "Automated AI AAR Audit"
+    ];
+    createLetterRoller(
+      document.getElementById('badgeViewport'),
+      badgeMessages,
+      'letter-box',
+      'letter-char',
+      3500,
+      18
+    );
+
+    // B. Hero Headline Rollover: Constant A: "TRAINING COMMANDERS IN" + Rollover X
+    const headlineMessages = [
+      "ELECTRONIC WARFARE",
+      "GPS SPOOFING DRIFT",
+      "DRONE COMM BLACKOUT",
+      "THE FOG OF WAR",
+      "TACTICAL RESILIENCE"
+    ];
+    createLetterRoller(
+      document.getElementById('headlineViewport'),
+      headlineMessages,
+      'headline-letter-box',
+      'headline-letter-char',
+      3800,
+      24
+    );
+
+    // ========================================================
+    // 3. INTERACTIVE SIMULATOR LOGIC
+    // ========================================================
+    const simState = { radio: false, gps: false, uav: false, redfog: false };
+
+    function toggleSim(type) {
+      if (type === 'redfog') {
+        const turnOn = !simState.redfog;
+        simState.redfog = turnOn;
+        simState.radio = turnOn;
+        simState.gps = turnOn;
+        simState.uav = turnOn;
+      } else {
+        simState[type] = !simState[type];
+        if (!simState[type] && simState.redfog) {
+          simState.redfog = false;
+        }
+      }
+
+      document.getElementById('btnRadio').classList.toggle('active', simState.radio);
+      document.getElementById('btnGPS').classList.toggle('active', simState.gps);
+      document.getElementById('btnUAV').classList.toggle('active', simState.uav);
+      document.getElementById('btnRedFog').classList.toggle('active', simState.redfog);
+
+      const dotBravo = document.getElementById('blipBravo');
+      const bravoLabel = document.getElementById('bravoLabel');
+      const scoreBadge = document.getElementById('scoreBadge');
+      const debriefText = document.getElementById('debriefText');
+      const radarNoise = document.getElementById('radarNoise');
+
+      const statLatency = document.getElementById('statLatency');
+      const statCLI = document.getElementById('statCLI');
+      const statDelta = document.getElementById('statDelta');
+      const statDoct = document.getElementById('statDoct');
+
+      const count = Object.values(simState).filter(Boolean).length;
+
+      // UAV static noise toggle
+      radarNoise.classList.toggle('active', simState.uav || simState.redfog);
+
+      if (count === 0) {
+        // Normal State
+        dotBravo.style.top = '60%';
+        dotBravo.style.left = '62%';
+        dotBravo.style.background = '#38bdf8';
+        bravoLabel.textContent = 'BRAVO [OK]';
+        bravoLabel.style.color = '#38bdf8';
+
+        scoreBadge.style.color = '#059669';
+        scoreBadge.textContent = 'READINESS: 94% • OPTIMAL STATUS';
+        debriefText.textContent = 'Comms channels are clear. Squad Bravo and Alpha are synchronized over VHF Tactical Mesh. Real-time telemetry error < 2 meters. Situational awareness intact.';
+
+        statLatency.textContent = '1.2 sec';
+        statCLI.textContent = '0.04 (Nominal)';
+        statDelta.textContent = '± 1.5 m';
+        statDoct.textContent = 'Normal Ops';
+        statDoct.style.color = '#059669';
+      } else {
+        // Degraded State
+        if (simState.radio) {
+          dotBravo.style.background = '#f59e0b';
+          bravoLabel.textContent = 'BRAVO [RADIO LOST]';
+          bravoLabel.style.color = '#f59e0b';
+        }
+        if (simState.gps) {
+          dotBravo.style.top = '78%';
+          dotBravo.style.left = '76%';
+          bravoLabel.textContent = 'BRAVO [GPS ±350M]';
+          bravoLabel.style.color = '#f43f5e';
+        }
+
+        if (simState.redfog || count >= 3) {
+          scoreBadge.style.color = '#dc2626';
+          scoreBadge.textContent = 'READINESS: 38% • FULL BLACKOUT';
+          debriefText.innerHTML = '<strong>🚨 CRITICAL EW INTERFERENCE:</strong> Total comms severance and spoofed coordinate telemetry. <span style="color:#2563eb; font-weight:700;">Tactical Directive:</span> Discard electronic map; switch to Pre-Plan Charlie terrain dead-reckoning and deploy runner teams.';
+          statLatency.textContent = '18.4 sec';
+          statCLI.textContent = '0.88 (Severe)';
+          statDelta.textContent = '± 350.0 m';
+          statDoct.textContent = 'SOP Charlie Execution';
+          statDoct.style.color = '#dc2626';
+        } else if (count >= 2) {
+          scoreBadge.style.color = '#d97706';
+          scoreBadge.textContent = 'READINESS: 62% • SEVERE DEGRADATION';
+          debriefText.innerHTML = '<strong>⚠️ High Jamming Alert:</strong> Squad Bravo unverified. Coordinated GPS drift detected. <span style="color:#2563eb; font-weight:700;">Doctrine:</span> Rally at Phase Line Bravo without awaiting radio acknowledgement.';
+          statLatency.textContent = '8.7 sec';
+          statCLI.textContent = '0.45 (Degraded)';
+          statDelta.textContent = '± 180.0 m';
+          statDoct.textContent = 'Terrain Verification';
+          statDoct.style.color = '#d97706';
+        } else {
+          scoreBadge.style.color = '#2563eb';
+          scoreBadge.textContent = 'READINESS: 78% • MODERATE INTERFERENCE';
+          debriefText.textContent = 'Minor jamming detected on Tactical VHF channels. Cadets prompted to transition to alternate frequency hopping channels.';
+          statLatency.textContent = '4.1 sec';
+          statCLI.textContent = '0.19 (Moderate)';
+          statDelta.textContent = '± 45.0 m';
+          statDoct.textContent = 'Frequency Shift';
+          statDoct.style.color = '#2563eb';
+        }
+      }
+    }
+
+    // ========================================================
+    // 4. LIGHTBOX MODAL INSPECTOR
+    // ========================================================
+    function openLightbox(imgSrc, title) {
+      const modal = document.getElementById('lightboxModal');
+      const img = document.getElementById('lightboxImg');
+      const titleEl = document.getElementById('lightboxTitle');
+      img.src = imgSrc;
+      titleEl.textContent = title;
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox(e) {
+      if (e && e.target && e.target.closest('.lightbox-content') && !e.target.classList.contains('lightbox-close-btn')) {
+        return;
+      }
+      const modal = document.getElementById('lightboxModal');
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeLightbox();
+    });
+
+    // ========================================================
+    // 5. MOBILE MENU DRAWER
+    // ========================================================
+    function toggleMobileMenu() {
+      const drawer = document.getElementById('mobileDrawer');
+      drawer.classList.toggle('open');
+    }
+    document.getElementById('mobileMenuBtn').addEventListener('click', toggleMobileMenu);
+
+    // ========================================================
+    // 6. GALLERY FILTERING (WALL OF PORTFOLIOS STYLE)
+    // ========================================================
+    function filterGallery(category, btn) {
+      document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      const items = document.querySelectorAll('.gallery-item');
+      items.forEach(item => {
+        if (category === 'all') {
+          item.style.display = '';
+        } else {
+          const itemCat = item.getAttribute('data-category');
+          if (itemCat === category) {
+            item.style.display = '';
+          } else {
+            item.style.display = 'none';
+          }
+        }
+      });
+    }
+
+    // Live clock simulator
+    setInterval(() => {
+      const d = new Date();
+      const h = String(d.getHours()).padStart(2, '0');
+      const m = String(d.getMinutes()).padStart(2, '0');
+      const s = String(d.getSeconds()).padStart(2, '0');
+      const clockEl = document.getElementById('simClock');
+      if (clockEl) clockEl.textContent = `CLOCK: ${h}:${m}:${s}`;
+    }, 1000);
+  </script>
+</body>
+</html>
